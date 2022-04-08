@@ -4,6 +4,7 @@ import tempfile
 from django import forms
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
@@ -280,3 +281,34 @@ class PostIntegrationViewsTests(TestCase):
             response_profile.context['page_obj'][0].text,
             self.post_user.text
         )
+
+
+class PostCacheIndexViewTests(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.user = User.objects.create_user(username='auth')
+        cls.post_user = Post.objects.create(
+            author=cls.user,
+            text='Тестовый текст',
+        )
+
+    def setUp(self) -> None:
+        self.guest_client = Client()
+        self.authorized_client = Client()
+        self.authorized_client.force_login(self.user)
+
+    def test_cache_of_home_page(self):
+        response_post_exits = (self.guest_client.get(reverse
+                                                     ('posts:index'))
+                               .content)
+        self.post_user.delete()
+        response_post_deleted = (self.guest_client.get(reverse
+                                                       ('posts:index'))
+                                 .content)
+        self.assertEqual(response_post_exits, response_post_deleted)
+        cache.clear()
+        response_cache_cleared = (self.guest_client.get(reverse
+                                                        ('posts:index'))
+                                  .content)
+        self.assertNotEqual(response_post_exits, response_cache_cleared)
