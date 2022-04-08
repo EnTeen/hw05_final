@@ -9,7 +9,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-from ..models import Group, Post
+from ..models import Follow, Group, Post
 
 User = get_user_model()
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
@@ -312,3 +312,70 @@ class PostCacheIndexViewTests(TestCase):
                                                         ('posts:index'))
                                   .content)
         self.assertNotEqual(response_post_exits, response_cache_cleared)
+
+
+class PostFollowViewTests(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.user_1 = User.objects.create_user(username='follower')
+        cls.user_2 = User.objects.create_user(username='not_follower')
+        cls.user_3 = User.objects.create_user(username='following')
+
+        cls.post_following = Post.objects.create(
+            author=cls.user_3,
+            text="Тестовый пост",
+        )
+
+    def setUp(self) -> None:
+        self.guest_client = Client()
+        self.follower = Client()
+        self.follower.force_login(self.user_1)
+        self.not_follower = Client()
+        self.not_follower.force_login(self.user_2)
+        self.following = Client()
+        self.following.force_login(self.user_3)
+
+    def test_follow_the_user(self):
+        follow = Follow.objects.create(
+            user=self.user_1, author=self.user_3
+        )
+        self.assertTrue(follow, f'{self.user_1} не подписан')
+
+    def test_unfollow_the_user(self):
+        unfollow = Follow.objects.filter(
+            user=self.user_1, author=self.user_3
+        ).delete()
+        self.assertTrue(unfollow, f'{self.user_1} не отписался')
+
+    def test_following_post_visibility_for_authorized_user(self):
+        content_before_follow = (
+            self.follower.get(reverse('posts:follow_index')).content
+        )
+        Follow.objects.get_or_create(user=self.user_1, author=self.user_3)
+        content_after_follow = (
+            self.follower.get(reverse('posts:follow_index')).content
+        )
+        content_for_not_follower = self.not_follower.get(
+            reverse('posts:follow_index')
+        ).content
+        self.assertNotEqual(
+            content_before_follow,
+            content_after_follow,
+            'Пост автора, на которого была оформлена подписка отсутствует',
+        )
+
+        self.assertNotEqual(
+            content_after_follow,
+            content_for_not_follower,
+            'Пост отображается для неподписанного автора',
+        )
+
+    def test_following_post_visibility_for_guest_user(self):
+        content_following_post_for_guest_user = (
+            self.guest_client.get(reverse('posts:follow_index')).content
+        )
+        self.assertFalse(
+            content_following_post_for_guest_user,
+            'Контент для гостевого юзера не является ожидаемым',
+        )
