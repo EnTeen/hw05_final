@@ -7,7 +7,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-from ..models import Post, User
+from ..models import Post, User, Comment
 
 User = get_user_model()
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
@@ -22,8 +22,7 @@ class PostCreateFormTests(TestCase):
         cls.post = Post.objects.create(
             author=cls.user,
             text='Тестовый текст',
-            image='posts/small.gif'
-
+            image='posts/small.gif',
         )
 
     @classmethod
@@ -35,6 +34,13 @@ class PostCreateFormTests(TestCase):
         self.guest_client = Client()
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
+        self.authorized_client.post(
+            reverse('posts:add_comment', kwargs={'post_id': self.post.pk}),
+            data={'text': 'Текст комментария'},
+            follow=True,
+        )
+        self.comment = Comment.objects.first()
+
 
     def test_new_post_created_in_database(self):
         posts_count = Post.objects.count()
@@ -93,3 +99,29 @@ class PostCreateFormTests(TestCase):
                             self.post.text)
         self.assertEqual(post.author.username,
                          self.post.author.username)
+
+    def test_new_comment_created_in_database(self):
+        comment_count = Comment.objects.count()
+        post_id = self.post.pk
+        form_comment = {'text': 'Текст комментария'}
+        self.authorized_client.post(
+            reverse('posts:add_comment', kwargs={'post_id': post_id}),
+            data=form_comment,
+            follow=True,
+        )
+        comment = Comment.objects.first()
+        self.assertEqual(comment.text, self.comment.text)
+        self.assertEqual(Comment.objects.count(), comment_count + 1)
+
+    def test_new_comment_not_created_in_database(self):
+        comment_count = Comment.objects.count()
+        post_id = self.post.pk
+        form_comment = {
+            'text': 'Текст комментария',
+        }
+        self.guest_client.post(
+            reverse('posts:add_comment', kwargs={'post_id': post_id}),
+            data=form_comment,
+            follow=True,
+        )
+        self.assertEqual(Comment.objects.count(), comment_count)
