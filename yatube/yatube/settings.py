@@ -141,3 +141,5 @@ EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 EMAIL_FILE_PATCH = os.path.join(BASE_DIR, 'sent_emails')
 
 PAGE_SIZE = 10
+
+CSRF_FAILURE_VIEW = 'core.views.csrf_failure'
