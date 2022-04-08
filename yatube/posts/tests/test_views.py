@@ -1,20 +1,39 @@
+import shutil
+import tempfile
+
 from django import forms
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from ..models import Group, Post
 
 User = get_user_model()
+TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
 
+@override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
 class PostsViewsTests(TestCase):
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         cls.user = User.objects.create_user(username='auth')
+
+        small_gif = (
+            b"\x47\x49\x46\x38\x39\x61\x02\x00"
+            b"\x01\x00\x80\x00\x00\x00\x00\x00"
+            b"\xFF\xFF\xFF\x21\xF9\x04\x00\x00"
+            b"\x00\x00\x00\x2C\x00\x00\x00\x00"
+            b"\x02\x00\x01\x00\x00\x02\x02\x0C"
+            b"\x0A\x00\x3B"
+        )
+
+        uploaded = SimpleUploadedFile(
+            name="small.gif", content=small_gif, content_type="image/gif"
+        )
 
         cls.group = Group.objects.create(
             title='Тестовая группа',
@@ -25,6 +44,7 @@ class PostsViewsTests(TestCase):
             author=cls.user,
             text='Тестовый пост User',
             group=cls.group,
+            image=uploaded,
         )
 
         cls.index_reverse = reverse('posts:index')
@@ -50,6 +70,11 @@ class PostsViewsTests(TestCase):
             ('posts/group_list.html', cls.group_list_reverse),
             ('posts/post_detail.html', cls.post_detail_reverse),
         )
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
 
     def setUp(self) -> None:
         self.guest_client = Client()
@@ -120,6 +145,7 @@ class PostsViewsTests(TestCase):
         from_fields = {
             'text': forms.fields.CharField,
             'group': forms.fields.ChoiceField,
+            'image': forms.fields.ImageField,
         }
 
         for value, expected in from_fields.items():
@@ -131,10 +157,12 @@ class PostsViewsTests(TestCase):
         text = post_user_obj.text
         author = post_user_obj.author.username
         group = post_user_obj.group.title
+        image = post_user_obj.image
 
         self.assertEqual(text, self.post_user.text)
         self.assertEqual(author, self.post_user.author.username)
         self.assertEqual(group, self.group.title)
+        self.assertEqual(image, self.post_user.image)
 
 
 class PaginatorViewsTest(TestCase):

@@ -52,6 +52,11 @@ class Post(models.Model):
         verbose_name='Ссылка группы',
         help_text='Группа, к которой будет относиться пост'
     )
+    image = models.ImageField(
+        'Картинка',
+        upload_to='posts/',
+        blank=True
+    )
 
     def __str__(self):
         return self.text[:15]
