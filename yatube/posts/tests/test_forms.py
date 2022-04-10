@@ -59,7 +59,6 @@ class PostCreateFormTests(TestCase):
         form_data = {
             'text': 'Тестовый текст',
             'image': uploaded,
-
         }
         self.authorized_client.post(
             reverse('posts:post_create'),
