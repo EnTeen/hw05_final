@@ -38,13 +38,13 @@
                   </label>
                   {{ field|addclass:'form-control' }}
                   {% if field.help_text %}
-                    <small id="{{ field.id_for_label }}-help" class="form-text text-muted">
-                      {{ field.help_text|safe }}
-                    </small>
+                  <small id="{{ field.id_for_label }}-help" class="form-text text-muted">
+                  {{ field.help_text|safe }}
+                  </small>
                   {% endif %}
                 </div>
               {% endfor %}
-          </div>
+            </form>
           <div class="d-flex justify-content-end">
             <button type="submit" class="btn btn-primary">
               {% if is_edit %}

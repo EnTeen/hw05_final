@@ -299,18 +299,18 @@ class PostCacheIndexViewTests(TestCase):
         self.authorized_client.force_login(self.user)
 
     def test_cache_of_home_page(self):
-        response_post_exits = (self.guest_client.get(reverse
-                                                     ('posts:index'))
-                               .content)
+        response_post_exits = (
+            self.guest_client.get(reverse('posts:index')).content
+        )
         self.post_user.delete()
-        response_post_deleted = (self.guest_client.get(reverse
-                                                       ('posts:index'))
-                                 .content)
+        response_post_deleted = (
+            self.guest_client.get(reverse('posts:index')).content
+        )
         self.assertEqual(response_post_exits, response_post_deleted)
         cache.clear()
-        response_cache_cleared = (self.guest_client.get(reverse
-                                                        ('posts:index'))
-                                  .content)
+        response_cache_cleared = (
+            self.guest_client.get(reverse('posts:index')).content
+        )
         self.assertNotEqual(response_post_exits, response_cache_cleared)
 
 
@@ -335,12 +335,23 @@ class PostFollowViewTests(TestCase):
         self.not_follower.force_login(self.user_2)
         self.following = Client()
         self.following.force_login(self.user_3)
+        self.follow_count = Follow.objects.count()
 
     def test_follow_the_user(self):
-        follow = Follow.objects.create(
-            user=self.user_1, author=self.user_3
+        response = self.follower.post(
+            reverse('posts:profile_follow', args=[self.post_following.author]),
         )
-        self.assertTrue(follow, f'{self.user_1} не подписан')
+        self.assertRedirects(response, reverse(
+            'posts:profile',
+            args=[self.post_following.author])
+        )
+        self.assertEqual(Follow.objects.count(), self.follow_count + 1)
+        self.assertTrue(
+            Follow.objects.filter(
+                user=self.user_1,
+                author=self.post_following.author
+            ).exists()
+        )
 
     def test_unfollow_the_user(self):
         unfollow = Follow.objects.filter(

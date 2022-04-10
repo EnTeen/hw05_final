@@ -58,44 +58,45 @@ class Post(models.Model):
         blank=True
     )
 
-    def __str__(self):
-        return self.text[:15]
-
     class Meta:
         ordering = ['-pub_date']
+
+    def __str__(self):
+        return self.text[:15]
 
 
 class Comment(models.Model):
     post = models.ForeignKey(
         Post,
         on_delete=models.CASCADE,
-        related_name="comments",
-        verbose_name="Пост",
-        help_text="Добавьте комментарий к посту",
+        related_name='comments',
+        verbose_name='Пост',
+        help_text='Добавьте комментарий к посту',
     )
 
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name="comments",
-        verbose_name="Автор",
-        help_text="Имя автора комментария",
+        related_name='comments',
+        verbose_name='Автор',
+        help_text='Имя автора комментария',
     )
 
     text = models.TextField(
-        "Текст комментария",
+        'Текст комментария',
         blank=False,
-        help_text="Введите текст комментария"
+        help_text='Введите текст комментария',
+        null=False,
     )
 
     created = models.DateTimeField(
-        "Дата комментария",
+        'Дата комментария',
         auto_now_add=True,
-        help_text="Добавьте дату комментария"
+        help_text='Добавьте дату комментария'
     )
 
     class Meta:
-        ordering = ["-created"]
+        ordering = ['-created']
 
     def __str__(self):
         return self.text
@@ -115,8 +116,14 @@ class Follow(models.Model):
         related_name='following',
         verbose_name='Автор',
         help_text='Имя автора',
-        null=True,
     )
 
+    class Meta:
+        constraints = (
+            models.UniqueConstraint(fields=('user', 'author'),
+                                    name='Пара уникальных значений')
+        )
+
     def __str__(self):
-        return str(self.author)
+        return self.author
+
