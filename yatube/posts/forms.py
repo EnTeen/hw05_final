@@ -20,10 +20,10 @@ class PostForm(ModelForm):
 class CommentForm(ModelForm):
     class Meta:
         model = Comment
-        fields = ("text",)
+        fields = ('text',)
         widgets = {
-            "text": forms.Textarea(attrs={"rows": 10, "cols": 40}),
+            'text': forms.Textarea(attrs={'rows': 10, 'cols': 40}),
         }
         help_texts = {
-            "text": "Текст нового комментария",
+            'text': 'Текст нового комментария',
         }
