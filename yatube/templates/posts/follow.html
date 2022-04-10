@@ -1,10 +1,10 @@
 {% extends 'base.html' %}
-{% block title %}Это главная страница проекта Yatube{% endblock %}
+{% block title %}Это страница с вашими подписками{% endblock %}
 {% block content %}
   <main>
     <div class="container py-5">
       <h1>Последние обновления на сайте</h1>
-      {% include 'posts/includes/switcher.html' %}
+      {% include 'posts/includes/switcher.html' with follow='True' %}
       {% for post in page_obj %}
         {% include 'posts/includes/post.html' %}
       {% endfor %}
