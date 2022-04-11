@@ -2,7 +2,7 @@
 {% block title %}Это главная страница проекта Yatube{% endblock %}
 {% load cache %}
 {% block content %}
-{% cache 20 index_page page_obj.number%}
+{% cache 20 index_page page_obj.number %}
   <main>
     <div class="container py-5">
       <h1>Последние обновления на сайте</h1>

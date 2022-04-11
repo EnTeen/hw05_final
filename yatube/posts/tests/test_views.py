@@ -354,10 +354,16 @@ class PostFollowViewTests(TestCase):
         )
 
     def test_unfollow_the_user(self):
-        unfollow = Follow.objects.filter(
-            user=self.user_1, author=self.user_3
-        ).delete()
-        self.assertTrue(unfollow, f'{self.user_1} не отписался')
+        Follow.objects.get_or_create(user=self.user_1, author=self.user_3)
+        self.following.post(
+            reverse('posts:profile_unfollow', args=[self.post_following.author]),
+        )
+        self.assertTrue(
+            Follow.objects.filter(
+                user=self.user_1,
+                author=self.post_following.author
+            ).exists()
+        )
 
     def test_following_post_visibility_for_authorized_user(self):
         content_before_follow = (
