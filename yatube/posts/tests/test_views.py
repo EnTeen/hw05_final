@@ -356,7 +356,8 @@ class PostFollowViewTests(TestCase):
     def test_unfollow_the_user(self):
         Follow.objects.get_or_create(user=self.user_1, author=self.user_3)
         self.following.post(
-            reverse('posts:profile_unfollow', args=[self.post_following.author]),
+            reverse('posts:profile_unfollow',
+                    args=[self.post_following.author]),
         )
         self.assertTrue(
             Follow.objects.filter(
